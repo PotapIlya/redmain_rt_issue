@@ -1,0 +1,28 @@
+To run redmine behind nginx proxy with SSL use:
+
+
+http {
+	map $http_upgrade $connection_upgrade {
+		default upgrade;
+		'' close;
+	}
+}
+
+in the /etc/nginx/nginx.conf
+
+and copy redmine.nginx.conf to /etc/nginx/sites-enabled
+
+
+
+You will also need to edit config/environment.rb:
+
+Change:
+
+Rails.application.initialize!
+
+with:
+
+RedmineApp::Application.routes.default_scope = { :path => '/redmine/, :shallow_path => '/redmine' }
+RedmineApp::Application.initialize!
+Redmine::Utils::relative_url_root = "/redmine"
+

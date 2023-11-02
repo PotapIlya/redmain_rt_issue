@@ -1,0 +1,59 @@
+version: "3.3"
+services:
+  redmine:
+    image: redmine-json/4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./redmine/plugins:/usr/src/redmine/plugins/
+    #  - ./redmine/themes/:/usr/src/redmine/public/themes/
+      - ./storage/redmine/files/:/usr/src/redmine/files/
+      - ./configuration.yml:/usr/src/redmine/config/configuration.yml
+ #     - ./s3.yml:/usr/src/redmine/config/s3.yml
+      - ./cable.yml:/usr/src/redmine/config/cable.yml
+    restart: unless-stopped
+    labels:
+      autoheal: "autoheal:true"
+    ports:
+      - "3000:3000"
+#    command: ruby -v
+    environment:
+      REDMINE_DB_POSTGRES: postgres
+      REDMINE_DB_PASSWORD: 1q2w3e4r
+      REDMINE_DB_USERNAME: redmine
+      REDMINE_DB_DATABASE: redmine
+      REDMINE_PLUGINS_MIGRATE: 'true'
+    depends_on:
+      - redis
+      - postgres
+
+  postgres:
+    image: postgres:14.5-bullseye
+    restart: unless-stopped
+    labels:
+      autoheal: true
+    environment:
+      POSTGRES_USER: redmine
+      POSTGRES_PASSWORD: 1q2w3e4r
+      POSTGRES_DB: redmine
+    volumes:
+      - ./storage/postgres/data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+  autoheal:
+    image: willfarrell/autoheal:latest
+    restart: always
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    volumes:
+      - ./storage/redis/data:/data
+    ports:
+      - "6379:6379"
